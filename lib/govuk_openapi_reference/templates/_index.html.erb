@@ -1,0 +1,13 @@
+<% api_reference = locals[:api_reference] %>
+
+<h2 class="govuk-heading-l" id="endpoints">Endpoints</h2>
+
+<% api_reference.operations.each do |operation| %>
+  <%= render 'operation', operation: operation %>
+<% end %>
+
+<h2 class="govuk-heading-l" id="objects">Objects</h2>
+
+<% api_reference.schemas.each do |schema| %>
+  <%= render 'schema', schema: schema %>
+<% end %>
