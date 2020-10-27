@@ -7,7 +7,7 @@ info:
     name: DfE
     email: becomingateacher@digital.education.gov.uk
   description: |
-    API for DfE's Apply for postgraduate teacher training service.
+    API for DfE’s Apply for teacher training service.
     Endpoints with the `/applications` prefix are considered stable.
     Experimental endpoints prefixed with `/test-data` may change or be removed.
 servers:
@@ -33,7 +33,7 @@ paths:
           and time. Times should be in ISO 8601 format.
         in: query
         required: true
-        example: '2019-12-06T12:00:00Z'
+        example: 2019-12-06 12:00:00.000000000 Z
         schema:
           type: string
           format: date-time
@@ -95,6 +95,9 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+              - data
+              - meta
               properties:
                 data:
                   "$ref": "#/components/schemas/MakeOffer"
@@ -117,17 +120,20 @@ paths:
     post:
       tags:
       - Application management
-      summary: Confirm enrolment
+      summary: Confirm enrolment (DEPRECATED)
       description: |
-        Confirm that the candidate has enrolled.
+        This endpoint has been deprecated and will return the application without changing it.
 
-        This will transition the application to the [enrolled state](/api-docs/lifecycle#enrolled).
+        There is currently no meaning to "enrolment" in Apply for teacher training.
       parameters:
       - "$ref": "#/components/parameters/application_id"
+      deprecated: true
       requestBody:
         content:
           application/json:
             schema:
+              required:
+              - meta
               type: object
               properties:
                 meta:
@@ -161,6 +167,8 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+              - meta
               properties:
                 meta:
                   "$ref": "#/components/schemas/MetaData"
@@ -193,6 +201,8 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+              - meta
               properties:
                 meta:
                   "$ref": "#/components/schemas/MetaData"
@@ -215,7 +225,7 @@ paths:
       - Application management
       summary: Reject application
       description: |
-        Reject the candidate's application with a reason.
+        Reject the candidate’s application with a reason.
 
         This will transition the application to the [rejected state](/api-docs/lifecycle#rejected).
       parameters:
@@ -226,6 +236,9 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+              - meta
+              - data
               properties:
                 data:
                   "$ref": "#/components/schemas/Rejection"
@@ -258,6 +271,52 @@ paths:
         in: query
         schema:
           type: integer
+      responses:
+        '200':
+          "$ref": "#/components/responses/OK"
+        '401':
+          "$ref": "#/components/responses/Unauthorized"
+  "/test-data/generate":
+    post:
+      tags:
+      - Testing
+      summary: Generate test data
+      description: 'Generates n new applications, defaulting to 100 applications with
+        one course choice per application. Does not change existing data. Only available
+        on the Sandbox. EXPERIMENTAL — this endpoint may change or disappear.
+
+        '
+      parameters:
+      - name: count
+        description: How many applications to generate (max 100)
+        in: query
+        schema:
+          type: integer
+          default: 100
+          maximum: 100
+      - name: courses_per_application
+        description: How many courses each generated application should apply to
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+          maximum: 3
+      responses:
+        '201':
+          "$ref": "#/components/responses/TestDataGenerated"
+        '401':
+          "$ref": "#/components/responses/Unauthorized"
+  "/test-data/clear":
+    post:
+      tags:
+      - Testing
+      summary: Clear test data
+      description: 'Deletes ALL application data for the current provider regardless
+        of how it was created. Only available on the Sandbox. EXPERIMENTAL — this
+        endpoint may change or disappear.
+
+        '
       responses:
         '200':
           "$ref": "#/components/responses/OK"
@@ -362,10 +421,13 @@ components:
       - withdrawal
       - further_information
       - work_experience
+      - safeguarding_issues_status
+      - safeguarding_issues_details_url
       properties:
         support_reference:
           type: string
-          description: The candidate's reference number for their application in the Apply system
+          description: The candidate’s reference number for their application in the
+            Apply system
           maxLength: 10
           example: AB1234
         status:
@@ -377,7 +439,6 @@ components:
           - awaiting_provider_decision
           - conditions_not_met
           - declined
-          - enrolled
           - offer
           - pending_conditions
           - recruited
@@ -396,22 +457,21 @@ components:
           - apply_2
           example: apply_1
         submitted_at:
-          deprecated: true
           type: string
           format: date-time
           description: Time of submission
-          example: '2019-06-13T10:44:31Z'
+          example: 2019-06-13 10:44:31.000000000 Z
         updated_at:
           type: string
           format: date-time
           description: Time of last change
-          example: '2019-06-13T10:44:31Z'
+          example: 2019-06-13 10:44:31.000000000 Z
         reject_by_default_at:
           type: string
           format: date-time
           nullable: true
           description: Time when the application is due to be rejected by default
-          example: '2019-06-13T23:59:59Z'
+          example: 2019-06-13 23:59:59.000000000 Z
         personal_statement:
           type: string
           maxLength: 10240
@@ -421,8 +481,8 @@ components:
         interview_preferences:
           type: string
           maxLength: 10240
-          description: The candidate’s interview preferences
-          example: I can’t come to interview on Thursdays
+          description: The candidate’s interview needs
+          example: I cannot come to interview on Thursdays
         candidate:
           "$ref": "#/components/schemas/Candidate"
         contact_details:
@@ -450,7 +510,11 @@ components:
           - "$ref": "#/components/schemas/Rejection"
           nullable: true
         hesa_itt_data:
-          "$ref": "#/components/schemas/HESAITTData"
+          anyOf:
+          - "$ref": "#/components/schemas/HESAITTData"
+          nullable: true
+          description: Values to populate this candidate’s HESA Initial Teacher Training
+            data return.  Available once an offer has been accepted.
         further_information:
           type: string
           maxLength: 10240
@@ -458,6 +522,21 @@ components:
           description: Other personal or professional issues relevant to the application
             which are not covered in the form
           example: I am expecting to be called for jury service in the next 12 months
+        safeguarding_issues_status:
+          type: string
+          description: Status of candidate's response to the safeguarding issues declaration
+          enum:
+          - no_safeguarding_issues_to_declare
+          - has_safeguarding_issues_to_declare
+          - never_asked
+          example: has_safeguarding_issues_to_declare
+        safeguarding_issues_details_url:
+          type: string
+          description: URL to Apply system where safeguarding issues disclosed by
+            the candidate can be access by users with permissions to view safeguarding
+            information.
+          example: https://apply-for-teacher-training.service.gov.uk/provider/applications/1#criminal-convictions-and-professional-misconduct
+          nullable: true
     Candidate:
       type: object
       additionalProperties: false
@@ -467,6 +546,7 @@ components:
       - last_name
       - date_of_birth
       - nationality
+      - domicile
       - uk_residency_status
       - english_main_language
       - english_language_qualifications
@@ -492,19 +572,25 @@ components:
           type: string
           format: date
           description: The candidate’s date of birth
-          example: '1985-02-02'
+          example: 1985-02-02
         nationality:
           type: array
           items:
             type: string
             pattern: "^[A-Z]{2}$"
             example: NL
-          maxItems: 2
+          maxItems: 5
           description: One or more ISO 3166-2 country codes
+        domicile:
+          type: string
+          maxLength: 2
+          description: The candidate’s domicile, as extracted from their address
+          example: GB
         uk_residency_status:
           type: string
           maxLength: 256
-          description: The candidate’s UK residency status, e.g. Citizen
+          description: The candidate’s UK residency status indicating their right
+            to work and study in the UK
           example: UK Citizen
         english_main_language:
           type: boolean
@@ -514,7 +600,7 @@ components:
           type: string
           maxLength: 10240
           nullable: true
-          description: About this candidate's English language qualifications, if
+          description: About this candidate’s English language qualifications, if
             English is not their main language
           example: I have a degree in English Language and Literature from the University
             of Munich
@@ -522,7 +608,7 @@ components:
           type: string
           maxLength: 10240
           nullable: true
-          description: Details of the candidate's fluency in other languages
+          description: Details of the candidate’s fluency in other languages
           example: I am bilingual in Finnish and English
         disability_disclosure:
           type: string
@@ -534,9 +620,10 @@ components:
     ContactDetails:
       type: object
       additionalProperties: false
-      description: UK addresses have country code 'GB' and `address_line1`, `address_line2`,
-        `address_line3`, `address_line4` and `postcode` attributes. International addresses have
-        a valid `country` value and the address itself is serialised to `address_line1`.
+      description: UK addresses have country code `GB` and `address_line1`, `address_line2`,
+        `address_line3`, `address_line4` and `postcode` attributes. International
+        addresses have a valid `country` value and the address itself is serialised
+        to `address_line1`.
       required:
       - address_line1
       - country
@@ -546,7 +633,7 @@ components:
         address_line1:
           type: string
           description: The candidate’s address line 1
-          maxLength: 50
+          maxLength: 200
           example: 45 Dialstone Lane
         address_line2:
           type: string
@@ -619,7 +706,7 @@ components:
           maxLength: 5
         study_mode:
           type: string
-          description: Can be 'full_time' or 'part_time'
+          description: Can be `full_time` or `part_time`
           example: full_time
           enum:
           - full_time
@@ -676,6 +763,13 @@ components:
       - institution_details
       - equivalency_details
       - awarding_body
+      - hesa_degtype
+      - hesa_degsbj
+      - hesa_degclss
+      - hesa_degest
+      - hesa_degctry
+      - hesa_degstdt
+      - hesa_degenddt
       properties:
         id:
           type: integer
@@ -716,7 +810,8 @@ components:
         equivalency_details:
           type: string
           description: Details of equivalency, if this qualification was awarded overseas
-          example: Equivalent to GCSE C
+          example: 'Naric: 4000123456 - Between GCSE and GCSE AS Level - Equivalent
+            to GCSE C'
           maxLength: 256
           nullable: true
         awarding_body:
@@ -725,15 +820,62 @@ components:
           example: University of Amsterdam
           maxLength: 256
           nullable: true
+        hesa_degtype:
+          type: string
+          description: HESA code for degree type
+          example: '001'
+          maxLength: 20
+          nullable: true
+        hesa_degsbj:
+          type: string
+          description: HESA code for degree subject
+          example: '100048'
+          maxLength: 20
+          nullable: true
+        hesa_degclss:
+          type: string
+          description: HESA code for degree class
+          example: '01'
+          maxLength: 20
+          nullable: true
+        hesa_degest:
+          type: string
+          description: HESA code for degree establishment
+          example: '0002'
+          maxLength: 20
+          nullable: true
+        hesa_degctry:
+          type: string
+          description: HESA code for degree country
+          example: XF
+          maxLength: 2
+          nullable: true
+        hesa_degstdt:
+          type: string
+          description: Degree start date in ISO8601 format
+          example: '2000-01-01'
+          maxLength: 10
+          nullable: true
+        hesa_degenddt:
+          type: string
+          description: Degree end date in ISO8601 format
+          example: '2004-01-01'
+          maxLength: 10
+          nullable: true
     Reference:
       type: object
       additionalProperties: false
       required:
+      - id
       - name
       - email
       - relationship
       - reference
       properties:
+        id:
+          type: integer
+          description: A unique reference id
+          example: 4321
         name:
           type: string
           description: The referee’s name
@@ -770,7 +912,7 @@ components:
           type: string
           format: date-time
           description: Time of the rejection or offer withdrawal
-          example: '2019-09-18T15:33:49.216Z'
+          example: 2019-09-18 15:33:49.216000000 Z
     Withdrawal:
       type: object
       additionalProperties: false
@@ -780,15 +922,17 @@ components:
       properties:
         reason:
           type: string
-          description: Optional. The candidate’s reason for withdrawing
+          description: Optional. The candidate’s reason for withdrawing. This field
+            is deprecated because the Apply service does not collect this information
           maxLength: 10240
           nullable: true
+          deprecated: true
           example: Candidate is unwell
         date:
           type: string
           format: date-time
           description: Time of the withdrawal
-          example: '2019-09-18T15:33:49.216Z'
+          example: 2019-09-18 15:33:49.216000000 Z
     Qualifications:
       type: object
       additionalProperties: false
@@ -840,7 +984,7 @@ components:
           type: string
           nullable: true
           description: The candidate’s explanation for any breaks in work history.
-            Will be null if there aren't any breaks in the candidate’s work history.
+            Will be null if there are not any breaks in the candidate’s work history.
             We define a break in work history as more than a month between 2 jobs.
           maxLength: 10240
           example: I spent time volunteering overseas...
@@ -870,13 +1014,13 @@ components:
           type: string
           format: date
           description: The date the position began
-          example: '2020-09-10'
+          example: 2020-09-10
         end_date:
           type: string
           format: date
           nullable: true
           description: The date the position finished, if applicable
-          example: '2019-04-01'
+          example: 2019-04-01
         role:
           type: string
           description: The position held by the candidate
@@ -904,8 +1048,7 @@ components:
       additionalProperties: false
       description: |
         Information required by HESA for the Initial Teacher Training data
-        return. This information will only be returned once the application
-        status is `enrolled`.
+        return.
       required:
       - sex
       - disability
@@ -938,6 +1081,7 @@ components:
           - '96'
         ethnicity:
           type: string
+          nullable: true
           description: The candidate’s ethnicity as [a 2-digit HESA code for Ethnicity](https://www.hesa.ac.uk/collection/c19053/e/ethnic)
           example: '10'
           enum:
@@ -984,7 +1128,7 @@ components:
           example: '12345'
     MetaData:
       type: object
-      description: Required under a "meta" key in the body of every POST or PUT request
+      description: Required under a ‘meta’ key in the body of every POST or PUT request
       additionalProperties: false
       required:
       - attribution
@@ -996,7 +1140,7 @@ components:
           type: string
           description: The time this update was made
           format: date-time
-          example: '2019-03-01T15:33:49.216Z'
+          example: 2019-03-01 15:33:49.216000000 Z
     Error:
       type: object
       additionalProperties: false
@@ -1067,7 +1211,7 @@ components:
             "$ref": "#/components/schemas/Error"
           example:
           - error: UnprocessableEntity
-            message: A 'meta' key was not included on the request body
+            message: A ‘meta’ key was not included on the request body
     OkResponse:
       type: object
       required:
