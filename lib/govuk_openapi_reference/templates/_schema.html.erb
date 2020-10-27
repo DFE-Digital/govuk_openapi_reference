@@ -1,0 +1,9 @@
+<% schema = locals[:schema] %>
+
+<h3 class="govuk-heading-m" id="<%= schema.anchor %>">
+  The <%= schema.name %> object
+</h3>
+
+<%= markdown_to_html schema.description %>
+
+<%= render 'properties_list', properties: schema.properties %>
