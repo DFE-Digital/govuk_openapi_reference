@@ -13,7 +13,11 @@
         <% end %>
       </dt>
       <dd class="govuk-summary-list__value">
-        <p class="govuk-body">
+        <p class="govuk-caption-m">
+          <% if property.nullable? %>
+              Optional
+          <% end %>
+
           <% if !property.object_schema_name %>
             <%= property.type_description %>
           <% elsif property.type == 'array' %>
@@ -22,12 +26,6 @@
             <%= link_to property.object_schema_name, "##{property.object_schema_name.parameterize}-object" %> object
           <% end %>
         </p>
-
-        <% if property.nullable? %>
-          <p class="govuk-body">
-            Optional
-          </p>
-        <% end %>
 
         <% if property.attributes.description %>
           <div class="govuk-!-margin-top-4">
