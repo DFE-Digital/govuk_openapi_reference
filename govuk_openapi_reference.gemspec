@@ -31,10 +31,10 @@ Gem::Specification.new do |spec|
   spec.add_dependency "rouge"
 
   spec.add_development_dependency "bundler", "~> 2.1.4"
-  spec.add_development_dependency "sassc"
   spec.add_development_dependency "byebug"
   spec.add_development_dependency "capybara", "~> 3.32"
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rspec", "~> 3.9.0"
   spec.add_development_dependency "rubocop-govuk", "~> 3.5.0"
+  spec.add_development_dependency "sassc"
 end

@@ -10,6 +10,7 @@ end
 require "bundler/gem_tasks"
 task default: :spec
 
+desc "Generate HTMl for the examples API specs in spec/examples"
 task :generate_test_pages do
   %w[pets.yml apply.yml].each do |filename|
     html = GovukOpenapiReference::HTML.new(File.read("spec/examples/#{filename}")).generate_html
@@ -21,8 +22,9 @@ task :generate_test_pages do
   end
 end
 
+desc "Compile the CSS needed to render the API reference"
 task :compile_assets do
-  require 'sassc'
-  css = SassC::Engine.new(File.read('assets/styles.scss'), style: :compressed).render
-  File.write('assets/compiled-styles.css', css)
+  require "sassc"
+  css = SassC::Engine.new(File.read("assets/styles.scss"), style: :compressed).render
+  File.write("assets/compiled-styles.css", css)
 end
