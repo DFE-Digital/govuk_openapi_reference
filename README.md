@@ -26,7 +26,7 @@ Add this to your view:
 <%= GovukOpenapiReference::HTML.new(File.read('path/to/your/openapi-spec.yml')).generate_html %>
 ```
 
-This works in Rails.
+This works in Rails. You will have to have the latest version [govuk-frontend](https://github.com/alphagov/govuk-frontend) available.
 
 ## Development
 
