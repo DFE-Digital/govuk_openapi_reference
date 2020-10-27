@@ -20,3 +20,9 @@ task :generate_test_pages do
     sh "open tmp/test-build/#{filename}.html"
   end
 end
+
+task :compile_assets do
+  require 'sassc'
+  css = SassC::Engine.new(File.read('assets/styles.scss'), style: :compressed).render
+  File.write('assets/compiled-styles.css', css)
+end

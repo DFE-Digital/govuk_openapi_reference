@@ -11,3 +11,7 @@
 <% api_reference.schemas.each do |schema| %>
   <%= render 'schema', schema: schema %>
 <% end %>
+
+<style>
+  <%= File.read('assets/compiled-styles.css') %>
+</style>

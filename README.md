@@ -26,11 +26,11 @@ Add this to your view:
 <%= GovukOpenapiReference::HTML.new(File.read('path/to/your/openapi-spec.yml')).generate_html %>
 ```
 
-This works in Rails. This doesn't yet include the stylesheets, so the code blocks still look a bit funky.
+This works in Rails.
 
 ## Development
 
-You can run `rake generate_test_pages` to generate example outputs.
+You can run `bundle exec rake generate_test_pages` to generate example outputs.
 
 ## Contributing
 

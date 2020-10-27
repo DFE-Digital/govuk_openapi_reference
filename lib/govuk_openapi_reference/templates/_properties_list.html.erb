@@ -7,7 +7,7 @@
         <code><%= property.name %></code>
       </dt>
       <dd class="govuk-summary-list__value">
-        <p class="app-api-metadata">
+        <p class="govuk-body">
           <% if !property.object_schema_name %>
             <%= property.type_description %>
           <% elsif property.type == 'array' %>
@@ -18,7 +18,7 @@
         </p>
 
         <% if property.nullable? %>
-          <p class="app-api-metadata">
+          <p class="govuk-body">
             Optional
           </p>
         <% end %>
