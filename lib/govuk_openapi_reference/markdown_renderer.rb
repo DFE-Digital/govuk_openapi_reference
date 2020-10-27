@@ -37,6 +37,11 @@ module GovukOpenapiReference
       HTML
     end
 
+    def link(link, title, content)
+      title_attribute = title.present? ? " title=\"#{title}\"" : ''
+      %(<a href="#{link}" class="govuk-link"#{title_attribute}>#{content}</a>)
+    end
+
     def self.render(content)
       Redcarpet::Markdown.new(self, tables: true).render(content)
     end
