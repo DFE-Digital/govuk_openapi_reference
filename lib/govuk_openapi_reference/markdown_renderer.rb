@@ -43,7 +43,7 @@ module GovukOpenapiReference
     end
 
     def self.render(content)
-      Redcarpet::Markdown.new(self, tables: true).render(content)
+      Redcarpet::Markdown.new(self, tables: true, no_intra_emphasis: true).render(content)
     end
   end
 end
