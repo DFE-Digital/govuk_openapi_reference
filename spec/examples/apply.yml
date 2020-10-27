@@ -396,6 +396,7 @@ components:
           - apply_2
           example: apply_1
         submitted_at:
+          deprecated: true
           type: string
           format: date-time
           description: Time of submission
